@@ -62,9 +62,9 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-region: 
-        role-to-assume: 
-        role-session-name: 
+        aws-region: ap-south-1
+        role-to-assume: arn:aws:iam::238573859336:role/OIDC-deployment
+        role-session-name: OIDC-deployment
     
     - name: serverless deploy
       uses: serverless/github-action@v1
