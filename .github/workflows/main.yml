@@ -2,9 +2,15 @@ name: Deploy to development branch
 
 on:
   workflow_dispatch:
-  push:
     branches:
       - development
+    inputs:
+      envt:
+        description: 'Select Environment'
+        required: true
+        options:
+          - cert
+          - prod
     paths:
       - 'Admin/**'
       - 'Connect/**'
