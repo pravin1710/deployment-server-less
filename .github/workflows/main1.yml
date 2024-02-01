@@ -69,18 +69,7 @@ jobs:
       - name: Install Plugins
         run: |
           npm install -g serverless-dotenv-plugin serverless-prune-plugin
-
-      - name: Convert variable to uppercase
-        id: string
-        uses: ASzc/change-string-case-action@v5
-        with:
-          string: ${{ github.event.inputs.envt }}
-      - id: step2
-        run: echo ${{ steps.string.outputs.uppercase }}     
-      - name: Retrieve .env content
-        env:
-          ENV_CONTENT: ${{ secrets[format('{0}_ENV', steps.string.outputs.uppercase )] }}  
-        run: echo "$ENV_CONTENT" > .env
+          
       - run: npm ci
       - name: serverless deploy
         uses: serverless/github-action@v1
