@@ -1,20 +1,26 @@
-name: Deploy to development branch
+name: Deploy vpi-proxy-server to ${{ github.event.inputs.envt }} branch
 
 on:
-    push:
-      branches:
-        - development
-      paths:
-        - 'Admin/**'
-        - 'Connect/**'
-        - 'Notification/**'
-    pull_request:
-      branches: # PRs to the following branches will trigger the workflow
-        - development
-      paths:
-        - 'Admin/**'
-        - 'Connect/**'
-        - 'Notification/**'
+  workflow_dispatch:
+    branches:
+    - #current working branch
+    inputs:
+      envt:
+        description: 'Select Environment'
+        required: true
+        options:
+          - development
+    paths:
+      - 'Admin/**'
+      - 'Connect/**'
+      - 'Notification/**'
+  pull_request:
+    branches: # PRs to the following branches will trigger the workflow
+      - #current working branch 
+    paths:
+      - 'Admin/**'
+      - 'Connect/**'
+      - 'Notification/**'
 
 permissions:
   id-token: write
@@ -33,12 +39,11 @@ jobs:
       id: filter
       with:
         filters: |
-          Admin:
             - 'Admin/**'
-          Connect:
             - 'Connect/**'
-          Notification:
             - 'Notification/**'
+
+
   deploy:
     needs: changes
     if: ${{ needs.changes.outputs.names != '[]' && github.ref == 'refs/heads/${{ github.event.inputs.envt }}' }}
@@ -53,28 +58,28 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ap-south-1
-          role-to-assume: arn:aws:iam::238573859336:role/OIDC-deployment
-          role-session-name: OIDC-deployment
-      - name: Install Plugins
-        run: |
-          npm install -g serverless-dotenv-plugin serverless-prune-plugin
-    
-    
-      - name: serverless deploy
-        uses: serverless/github-action@v1
-        with:
-          args: -c "cd ./${{ matrix.name }} && serverless deploy"
-          entrypoint: /bin/sh
-        env:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: #region
+        role-to-assume: #role-arn
+        role-session-name: #role name
+    - name: Install Plugins
+      run: |
+        npm install -g serverless-dotenv-plugin serverless-prune-plugin
+
+    - run: npm ci
+    - name: serverless deploy
+      uses: serverless/github-action@v1
+      with:
+        args: -c "cd ./${{ matrix.name }} && serverless deploy"
+        entrypoint: /bin/sh
+      env:
           STAGE: ${{ secrets.DEV_STAGE }}
           ACCOUNT_ID: ${{ secrets.DEV_ACCOUNT_ID }}
           REGION: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -97,4 +102,4 @@ jobs:
           PLATFORM_AUDIT_LOGS_S3_BUCKET: ${{ secrets.DEV_PLATFORM_AUDIT_LOGS_S3_BUCKET }}
           DESCOPE_MANAGEMENT_KEY: ${{ secrets.DEV_DESCOPE_MANAGEMENT_KEY }}
           DESCOPE_PROJECT_ID: ${{ secrets.DEV_DESCOPE_PROJECT_ID }}
-          DESCOPE_ACCESS_KEY: ${{ secrets.DEV_DESCOPE_ACCESS_KEY }}
+          DESCOPE_ACCESS_KEY: ${{ secrets.DEV_DESCOPE_ACCESS_KEY }}  
