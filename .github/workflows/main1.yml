@@ -5,6 +5,14 @@ on:
     push:
       branches:
         - development
+      inputs:
+          envt:
+            description: 'Select Environment'
+              required: true
+              options:
+                - cert
+                - prod
+      
       paths:
         - 'Admin/**'
         - 'Connect/**'
@@ -69,7 +77,7 @@ jobs:
       - name: Install Plugins
         run: |
           npm install -g serverless-dotenv-plugin serverless-prune-plugin
-          
+
       - run: npm ci
       - name: serverless deploy
         uses: serverless/github-action@v1
