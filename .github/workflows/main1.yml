@@ -1,17 +1,10 @@
 name: Deploy vpi-proxy-server to ${{ github.event.inputs.envt }} branch
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
     push:
       branches:
         - development
-      inputs:
-          envt:
-            description: 'Select Environment'
-            required: true
-            options:
-                - cert
-                - prod
       paths:
         - 'Admin/**'
         - 'Connect/**'
@@ -23,8 +16,6 @@ on:
         - 'Admin/**'
         - 'Connect/**'
         - 'Notification/**'
-  
-
 
 permissions:
   id-token: write
@@ -37,18 +28,18 @@ jobs:
     outputs:
       names: ${{ steps.filter.outputs.changes }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Detect Changes
-      uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        filters: |
-          Admin:
-            - 'Admin/**'
-          Connect:
-            - 'Connect/**'
-          Notification:
-            - 'Notification/**'
+      - uses: actions/checkout@v2
+      - name: Detect Changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            Admin:
+              - 'Admin/**'
+            Connect:
+              - 'Connect/**'
+            Notification:
+              - 'Notification/**'
 
   deploy:
     needs: changes
@@ -64,64 +55,59 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.name }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-region: us-east-1
-        role-to-assume: arn:aws:iam::${{ fromJson(vars.VPI_PROXY_SERVER_ENV)[github.event.inputs.envt]['aws_account_id']}}:role/GitHub_Deployment
-        role-session-name: GitHub_Deployment
-    - name: Install Plugins
-      run: |
-        npm install -g 
-        -serverless-dotenv-plugin 
-        -serverless-prune-plugin
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ap-south-1
+          role-to-assume: arn:aws:iam::238573859336:role/OIDC-deployment
+          role-session-name: OIDC-deployment
+      - name: Install Plugins
+        run: |
+          npm install -g serverless-dotenv-plugin serverless-prune-plugin
 
-    - name: Convert variable to uppercase
-      id: string
-      uses: ASzc/change-string-case-action@v5
-      with:
-       string: ${{ github.event.inputs.envt }}
-    - id: step2
-      run: echo ${{ steps.string.outputs.uppercase }}     
-    - name: Retrieve .env content
-      env:
-        ENV_CONTENT: ${{ secrets[format('{0}_ENV', steps.string.outputs.uppercase )] }}  
-      run: echo "$ENV_CONTENT" > .env
-    - run: npm ci
-    - name: serverless deploy
-      uses: serverless/github-action@v1
-      with:
-        args: -c "cd ./${{ matrix.name }} && serverless deploy"
-        entrypoint: /bin/sh
-      env:
-        STAGE: ${{ secrets.DEV_STAGE }}
-        ACCOUNT_ID: ${{ secrets.DEV_ACCOUNT_ID }}
-        REGION: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        DEV_DB_HOST: ${{ secrets.DEV_DB_HOST }}
-        DEV_DB_USER: ${{ secrets.DEV_DB_USER }}
-        DEV_DB_PASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
-        DEV_DB_DATABASE: ${{ secrets.DEV_DB_DATABASE }}
-        CUSTOM_AUTH_ACCESS_TOKEN: ${{ secrets.DEV_CUSTOM_AUTH_ACCESS_TOKEN }}
-        CUSTOM_AUTH_API_KEY_TOKEN: ${{ secrets.DEV_CUSTOM_AUTH_API_KEY_TOKEN }}
-        INTEGRATION_BRIDGE_URL: ${{ secrets.DEV_INTEGRATION_BRIDGE_URL }}
-        INTEGRATION_BRIDGE_USER_ID: ${{ secrets.DEV_INTEGRATION_BRIDGE_USER_ID }}
-        INTEGRATION_BRIDHE_USER_SECRET: ${{ secrets.DEV_INTEGRATION_BRIDHE_USER_SECRET }}
-        AUDIT_LOGS_QUEUE: ${{ secrets.DEV_AUDIT_LOGS_QUEUE }}
-        USER_CONTEXT_QUEUE: ${{ secrets.DEV_USER_CONTEXT_QUEUE }}
-        WEBSOCKET_RESPONSE_QUEUE: ${{ secrets.DEV_WEBSOCKET_RESPONSE_QUEUE }}
-        WEBSOCKET_CONTAINER_CONFIG_QUEUE: ${{ secrets.DEV_WEBSOCKET_CONTAINER_CONFIG_QUEUE }}
-        WEBSOCKET_CONNECTION_QUEUE: ${{ secrets.DEV_WEBSOCKET_CONNECTION_QUEUE }}
-        WEBSOCKET_DISCONNECTION_QUEUE: ${{ secrets.DEV_WEBSOCKET_DISCONNECTION_QUEUE }}
-        CONTAINERS_CLOUDWATCH_LOGS_QUEUE: ${{ secrets.DEV_CONTAINERS_CLOUDWATCH_LOGS_QUEUE }}
-        PLATFORM_AUDIT_LOGS_S3_BUCKET: ${{ secrets.DEV_PLATFORM_AUDIT_LOGS_S3_BUCKET }}
-        DESCOPE_MANAGEMENT_KEY: ${{ secrets.DEV_DESCOPE_MANAGEMENT_KEY }}
-        DESCOPE_PROJECT_ID: ${{ secrets.DEV_DESCOPE_PROJECT_ID }}
-        DESCOPE_ACCESS_KEY: ${{ secrets.DEV_DESCOPE_ACCESS_KEY }}
-
-    
-    
+      - name: Convert variable to uppercase
+        id: string
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ github.event.inputs.envt }}
+      - id: step2
+        run: echo ${{ steps.string.outputs.uppercase }}     
+      - name: Retrieve .env content
+        env:
+          ENV_CONTENT: ${{ secrets[format('{0}_ENV', steps.string.outputs.uppercase )] }}  
+        run: echo "$ENV_CONTENT" > .env
+      - run: npm ci
+      - name: serverless deploy
+        uses: serverless/github-action@v1
+        with:
+          args: -c "cd ./${{ matrix.name }} && serverless deploy"
+          entrypoint: /bin/sh
+        env:
+          STAGE: ${{ secrets.DEV_STAGE }}
+          ACCOUNT_ID: ${{ secrets.DEV_ACCOUNT_ID }}
+          REGION: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          DEV_DB_HOST: ${{ secrets.DEV_DB_HOST }}
+          DEV_DB_USER: ${{ secrets.DEV_DB_USER }}
+          DEV_DB_PASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
+          DEV_DB_DATABASE: ${{ secrets.DEV_DB_DATABASE }}
+          CUSTOM_AUTH_ACCESS_TOKEN: ${{ secrets.DEV_CUSTOM_AUTH_ACCESS_TOKEN }}
+          CUSTOM_AUTH_API_KEY_TOKEN: ${{ secrets.DEV_CUSTOM_AUTH_API_KEY_TOKEN }}
+          INTEGRATION_BRIDGE_URL: ${{ secrets.DEV_INTEGRATION_BRIDGE_URL }}
+          INTEGRATION_BRIDGE_USER_ID: ${{ secrets.DEV_INTEGRATION_BRIDGE_USER_ID }}
+          INTEGRATION_BRIDHE_USER_SECRET: ${{ secrets.DEV_INTEGRATION_BRIDHE_USER_SECRET }}
+          AUDIT_LOGS_QUEUE: ${{ secrets.DEV_AUDIT_LOGS_QUEUE }}
+          USER_CONTEXT_QUEUE: ${{ secrets.DEV_USER_CONTEXT_QUEUE }}
+          WEBSOCKET_RESPONSE_QUEUE: ${{ secrets.DEV_WEBSOCKET_RESPONSE_QUEUE }}
+          WEBSOCKET_CONTAINER_CONFIG_QUEUE: ${{ secrets.DEV_WEBSOCKET_CONTAINER_CONFIG_QUEUE }}
+          WEBSOCKET_CONNECTION_QUEUE: ${{ secrets.DEV_WEBSOCKET_CONNECTION_QUEUE }}
+          WEBSOCKET_DISCONNECTION_QUEUE: ${{ secrets.DEV_WEBSOCKET_DISCONNECTION_QUEUE }}
+          CONTAINERS_CLOUDWATCH_LOGS_QUEUE: ${{ secrets.DEV_CONTAINERS_CLOUDWATCH_LOGS_QUEUE }}
+          PLATFORM_AUDIT_LOGS_S3_BUCKET: ${{ secrets.DEV_PLATFORM_AUDIT_LOGS_S3_BUCKET }}
+          DESCOPE_MANAGEMENT_KEY: ${{ secrets.DEV_DESCOPE_MANAGEMENT_KEY }}
+          DESCOPE_PROJECT_ID: ${{ secrets.DEV_DESCOPE_PROJECT_ID }}
+          DESCOPE_ACCESS_KEY: ${{ secrets.DEV_DESCOPE_ACCESS_KEY }}
