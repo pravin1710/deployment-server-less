@@ -1,27 +1,20 @@
 name: Deploy to development branch
 
 on:
-  workflow_dispatch:
-    branches:
-      - development
-    inputs:
-      envt:
-        description: 'Select Environment'
-        required: true
-        options:
-          - cert
-          - prod
-    paths:
-      - 'Admin/**'
-      - 'Connect/**'
-      - 'Notification/**'
-  pull_request:
-    branches: 
-      - development
-    paths:
-      - 'Admin/**'
-      - 'Connect/**'
-      - 'Notification/**'
+    push:
+      branches:
+        - development
+      paths:
+        - 'Admin/**'
+        - 'Connect/**'
+        - 'Notification/**'
+    pull_request:
+      branches: # PRs to the following branches will trigger the workflow
+        - development
+      paths:
+        - 'Admin/**'
+        - 'Connect/**'
+        - 'Notification/**'
 
 permissions:
   id-token: write
